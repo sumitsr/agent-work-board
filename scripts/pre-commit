@@ -1,0 +1,11 @@
+#!/bin/sh
+# Blocks commits that would add sensitive data: live board state, logs, keys, tokens or passwords.
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+bad=$(printf '%s\n' "$staged" | grep -E '^data/' | grep -v '^data/prices.example.json$')
+if [ -n "$bad" ]; then echo "pre-commit: live data must not be committed:"; echo "$bad"; exit 1; fi
+pattern='(BEGIN [A-Z ]*PRIVATE KEY|sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|(password|passwd|secret|api[_-]?key|token)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{6,})'
+hits=$(git diff --cached -U0 -- $staged | grep -E '^\+' | grep -iE "$pattern")
+if [ -n "$hits" ]; then echo "pre-commit: possible secret in the staged changes:"; echo "$hits" | cut -c1-120; exit 1; fi
+exit 0

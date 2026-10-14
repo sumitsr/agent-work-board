@@ -1,0 +1,12 @@
+{
+  "_note": "Copy to data/prices.json and fill in API rates per million tokens from the source page. The board shows an API-equivalent estimate only when every rate of a model is a number.",
+  "source": "https://...",
+  "checked": "YYYY-MM-DD",
+  "currency": "USD",
+  "models": {
+    "Opus": { "input": null, "output": null, "cacheWrite": null, "cacheRead": null },
+    "Sonnet": { "input": null, "output": null, "cacheWrite": null, "cacheRead": null },
+    "Haiku": { "input": null, "output": null, "cacheWrite": null, "cacheRead": null },
+    "Fable": { "input": null, "output": null, "cacheWrite": null, "cacheRead": null }
+  }
+}

@@ -1,0 +1,13 @@
+# Live board state and logs: personal, change every minute
+data/*
+!data/prices.example.json
+# Build output of the Mac app (rebuild with mac/build.sh)
+mac/build/
+snapshots/
+.DS_Store
+# Archify work folders and the local demo recording (frames and mp4)
+.archify/
+demo/out/
+# Earlier Archify drafts, kept locally only
+docs/diagrams/archify/
+docs/diagrams/compare.png

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Post and update work on the local Agent Work Board. Usage: awb task <id> --status running --stage "..." (see awb.mjs).
+NODE="$(command -v node)" || { echo "awb: node (22 or newer) not found on PATH" >&2; exit 1; }
+exec "$NODE" "$(dirname "$0")/awb.mjs" "$@"

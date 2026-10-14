@@ -1,0 +1,12 @@
+#!/bin/sh
+# Starts the board at login on macOS: fills in this folder and your node in the LaunchAgent template, then loads it.
+set -e
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+NODE="$(command -v node)" || { echo "install.sh: node (22 or newer) not found on PATH" >&2; exit 1; }
+LABEL=com.example.agent-work-board
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+mkdir -p "$ROOT/data" "$HOME/Library/LaunchAgents"
+sed -e "s|__NODE__|$NODE|g" -e "s|__ROOT__|$ROOT|g" "$ROOT/$LABEL.plist.template" > "$PLIST"
+launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$PLIST"
+echo "Installed $PLIST. The board is at http://127.0.0.1:4747"
