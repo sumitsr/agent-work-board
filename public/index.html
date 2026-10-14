@@ -88,7 +88,7 @@
   .tile { justify-self: center; width: min(100%, 340px); aspect-ratio: 1; border-radius: 22%; display: grid; place-items: center; position: relative;
     background: linear-gradient(160deg, var(--tile-a), var(--tile-b)); box-shadow: 0 30px 60px rgba(30, 10, 40, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -10px 24px rgba(0, 0, 0, 0.18); max-width: 100%; }
   .tile::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 45%); pointer-events: none; }
-  .tile b { position: absolute; right: 8%; top: 7%; min-width: 46px; height: 46px; padding: 0 10px; border-radius: 23px; display: grid; place-items: center; font: 700 24px var(--font-display); background: rgba(255, 255, 255, 0.92); color: var(--cta-ink); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); }
+  .tile b { position: absolute; right: 8%; top: 7%; min-width: 46px; height: 46px; padding: 0 10px; border-radius: 23px; display: grid; place-items: center; font: 700 24px var(--font-display); background: rgba(22, 14, 44, 0.55); color: #fff; border: 1px solid rgba(255, 255, 255, 0.45); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 20px rgba(0, 0, 0, 0.25); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
   .tile svg { width: 74%; height: auto; }
   .tile .t-ink { fill: rgba(255, 255, 255, 0.94); }
   .tile .t-soft { fill: rgba(255, 255, 255, 0.55); }
@@ -161,7 +161,7 @@
   .task-title { flex: 1 1 240px; font: 600 15.5px var(--font-display); overflow-wrap: anywhere; min-width: 0; }
   .pill { font: 600 11.5px var(--mono); padding: 3px 9px; border-radius: 999px; white-space: nowrap; color: var(--cta-ink); background: var(--idle); }
   .pill[data-s="running"] { background: var(--run); } .pill[data-s="review"] { background: var(--review); } .pill[data-s="blocked"], .pill[data-s="failed"] { background: var(--blocked); }
-  .pill[data-s="done"] { background: var(--done); } .pill[data-s="queued"] { background: var(--queued); } .pill.quiet { background: rgba(255, 255, 255, 0.88); }
+  .pill[data-s="done"] { background: var(--done); } .pill[data-s="queued"] { background: var(--queued); } .pill.quiet { background: rgba(255, 255, 255, 0.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45); }
   .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-2); }
   .meta b { color: var(--ink); font-weight: 600; }
   .meta .mono { font: 12px var(--mono); color: var(--ink-3); }
@@ -302,8 +302,8 @@
   .chip:hover { background: var(--glass-strong); }
   .chip b { min-width: 20px; padding: 1px 6px; border-radius: 999px; font: 600 11px var(--mono); text-align: center; background: rgba(255, 255, 255, 0.14); }
   .chip b.zero { opacity: 0.5; }
-  .chip[aria-pressed="true"] { background: rgba(255, 255, 255, 0.92); color: var(--cta-ink); border-color: transparent; box-shadow: 0 6px 18px rgba(10, 10, 40, 0.22); }
-  .chip[aria-pressed="true"] b { background: rgba(36, 23, 58, 0.12); }
+  .chip[aria-pressed="true"] { background: rgba(255, 255, 255, 0.26); color: #fff; border-color: rgba(255, 255, 255, 0.7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 8px 22px rgba(10, 8, 40, 0.22); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); }
+  .chip[aria-pressed="true"] b { background: rgba(255, 255, 255, 0.24); color: #fff; }
   .usage-pill { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 30px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--glass-line); background: var(--glass); -webkit-appearance: none; appearance: none; cursor: pointer; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; backdrop-filter: blur(20px) saturate(150%); -webkit-backdrop-filter: blur(20px) saturate(150%); transition: background 0.18s ease; }
   .usage-pill b { color: var(--ink); font: 650 13px var(--font-display); }
   .usage-pill:hover { background: var(--glass-strong); }
@@ -372,7 +372,7 @@
 
   .seg { display: inline-flex; padding: 2px; border-radius: 9px; background: rgba(20, 12, 45, 0.28); gap: 2px; }
   .seg button { border: 0; background: none; padding: 3px 8px; border-radius: 7px; font-size: 11.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
-  .seg button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.9); color: var(--cta-ink); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); }
+  .seg button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.26); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.15); }
   .tl-group { display: grid; gap: 2px; }
   .tl-group h4 { position: sticky; top: 0; z-index: 1; justify-self: start; margin: 2px 0; padding: 2px 9px; border-radius: 999px; font: 600 11px var(--font); letter-spacing: 0.02em; color: var(--ink-2); background: color-mix(in srgb, var(--bottom) 55%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   .tl-item { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 0 9px; padding: 5px 6px; border-radius: 10px; }
@@ -393,7 +393,7 @@
   .periods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .period { display: grid; gap: 1px; text-align: left; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--glass-line); background: var(--glass); cursor: pointer; min-width: 0; transition: background 0.18s ease, transform 0.18s ease; }
   .period:hover { transform: translateY(-1px); background: var(--glass-strong); }
-  .period[aria-pressed="true"] { background: rgba(255, 255, 255, 0.92); color: var(--cta-ink); border-color: transparent; box-shadow: 0 10px 26px rgba(10, 8, 40, 0.25); }
+  .period[aria-pressed="true"] { background: rgba(255, 255, 255, 0.26); color: #fff; border-color: rgba(255, 255, 255, 0.7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 8px 22px rgba(10, 8, 40, 0.22); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); }
   .period span { font-size: 12px; opacity: 0.75; }
   .period b { font: 700 26px/1.15 var(--font-display); letter-spacing: -0.02em; }
   .period small { font-size: 11.5px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
