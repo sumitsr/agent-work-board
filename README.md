@@ -95,7 +95,7 @@ The board's only token cost is agents running `awb` through their shell, so post
 
 Paste these three lines into your agents' instructions and they will keep the board current.
 
-**Or post with no agent effort:** register `node /path/to/agent-work-board/scripts/claude-hook.mjs` as a Claude Code command hook for `UserPromptSubmit`, `Stop`, `SubagentStart` and `SubagentStop`. In projects with `.claude/team/handbook.md` it keeps one card for the lead and one per subagent type up to date.
+**Or post with no agent effort:** register `node /path/to/agent-work-board/scripts/claude-hook.mjs` as a Claude Code command hook for `UserPromptSubmit`, `Stop`, `SubagentStop` and `PreToolUse` (matcher `Agent|Task`). In projects with `.claude/team/handbook.md` it keeps one card for the lead and one per team member, named from the dispatch description (`Mara: fact-check PR 160`) or "You are Mara" in the prompt.
 
 ## Configuration
 
