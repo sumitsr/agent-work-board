@@ -15,9 +15,11 @@
 // AWB_DATA=/some/dir points the command (and server.mjs) at another data folder, e.g. a scratch copy for testing.
 //
 // Status is one of queued, running, blocked, review, done, failed, cancelled. Times are set for you:
-// updatedAt on every change, startedAt when a task first runs, finishedAt when it ends.
+// updatedAt on every change, startedAt when a round starts (first run, or running again after review or a finish),
+// finishedAt when it ends. A new task without --workstream takes its folder's name from data/workstreams.json.
 import { readFileSync, writeFileSync, renameSync, mkdirSync, rmdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { homedir } from "node:os";
 
 const ROOT = import.meta.dirname;
 const DATA_DIR = process.env.AWB_DATA || join(ROOT, "data");
@@ -98,6 +100,21 @@ const save = (state) => {
   renameSync(temp, STATE_FILE);
 };
 
+// A new task or need without --workstream takes its project's name from data/workstreams.json
+// ({ "~/Code/orbit": "Orbit" }, matched on the current folder; an agent's worktree counts as its project), else "General".
+function defaultWorkstream() {
+  try {
+    const cwd = process.cwd().replace(/\/\.claude\/worktrees\/[^/]+/, "");
+    const named = Object.entries(JSON.parse(readFileSync(join(DATA_DIR, "workstreams.json"), "utf8")))
+      .map(([prefix, name]) => [prefix.replace(/^~(?=\/|$)/, homedir()), String(name)])
+      .filter(([prefix]) => cwd === prefix || cwd.startsWith(prefix + "/"))
+      .sort((a, b) => b[0].length - a[0].length)[0];
+    return named ? named[1] : "General";
+  } catch {
+    return "General";
+  }
+}
+
 const validId = (id) => typeof id === "string" && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,120}$/.test(id);
 const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 const parseLink = (link) => {
@@ -114,7 +131,7 @@ function upsertTask(id, options) {
   const now = new Date().toISOString();
   withLock(() => {
     const state = load();
-    const task = state.tasks[id] || { workstream: "General", title: id, status: "queued", log: [], links: [] };
+    const task = state.tasks[id] || { workstream: defaultWorkstream(), title: id, status: "queued", log: [], links: [] };
     for (const key of ["workstream", "title", "agent", "role", "model", "stage", "detail"]) if (options[key] !== undefined) task[key] = options[key];
     if (options.progress !== undefined) {
       const progress = Number(options.progress);
@@ -123,8 +140,9 @@ function upsertTask(id, options) {
     }
     if (options.status) {
       if (options.status !== task.status) task.history = [...(task.history || []), { at: now, status: options.status }].slice(-HISTORY_LIMIT);
+      // A new round (after a hand-back or a finish) restarts the clock; a block keeps it.
+      if (options.status === "running" && (!task.startedAt || task.status === "review" || FINISHED.includes(task.status))) task.startedAt = now;
       task.status = options.status;
-      if (options.status === "running" && !task.startedAt) task.startedAt = now;
       if (FINISHED.includes(options.status)) task.finishedAt = now;
       else delete task.finishedAt;
     }
@@ -180,7 +198,7 @@ function upsertNeed(id, options) {
   withLock(() => {
     const state = load();
     if (!state.needs[id] && options.resolve && !options.title) fail(`no need called ${id}`);
-    const need = state.needs[id] || { title: id, workstream: "General", status: "open", links: [], createdAt: now };
+    const need = state.needs[id] || { title: id, workstream: defaultWorkstream(), status: "open", links: [], createdAt: now };
     for (const key of ["title", "workstream", "due", "question", "task"]) if (options[key] !== undefined) need[key] = options[key];
     if (options.workstream === undefined && !state.needs[id] && state.tasks[need.task]) need.workstream = state.tasks[need.task].workstream;
     need.links = addLinks(need.links, options.links);

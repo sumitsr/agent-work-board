@@ -1188,9 +1188,7 @@
   render();
 
   const conn = (state, text) => { $("conn").dataset.state = state; $("conn-text").textContent = text; $("live-text").textContent = state === "live" ? "Live" : "Offline"; };
-  const source = new EventSource("/events");
-  source.onopen = () => conn("live", "Live on this Mac");
-  source.onmessage = (event) => {
+  const onMessage = (event) => {
     try {
       const data = JSON.parse(event.data);
       tasks = Object.entries(data.tasks || {}).map(normTask);
@@ -1209,7 +1207,18 @@
       fresh.forEach((m, index) => setTimeout(() => deliver(m), index * 450));
     } catch { /* a malformed message is replaced by the next one */ }
   };
-  source.onerror = () => conn("off", "Reconnecting…");
+  // WebKit (Safari and the Mac app) stops retrying once a restarting server refuses the connection, which froze
+  // the board until a manual reload; a closed stream is replaced by a new one.
+  const connect = () => {
+    const source = new EventSource("/events");
+    source.onopen = () => conn("live", "Live on this Mac");
+    source.onmessage = onMessage;
+    source.onerror = () => {
+      conn("off", "Reconnecting…");
+      if (source.readyState === EventSource.CLOSED) setTimeout(connect, 2000);
+    };
+  };
+  connect();
 })();
 </script>
 </body>

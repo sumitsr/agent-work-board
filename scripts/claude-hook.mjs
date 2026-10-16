@@ -2,8 +2,8 @@
 // Claude Code hook: posts to the board automatically, so it stays live even when an agent forgets to run awb.
 // Registered in ~/.claude/settings.json for UserPromptSubmit, Stop, PreToolUse (Agent|Task) and SubagentStop. Acts
 // only in team projects (those with .claude/team/handbook.md): one task for the lead and one per expert, e.g.
-// ds-explainer-mara. Experts run as general-purpose agents, so the name comes from the dispatch description
-// ("Mara: fact-check replay ladder") or "You are Mara" in the prompt, and must be a member of the board's team.
+// orbit-mara. Experts run as general-purpose agents, so the name comes from the dispatch description
+// ("Mara: fact-check PR 160") or "You are Mara" in the prompt, and must be a member of the board's team.
 // Never blocks Claude: any failure is swallowed and the hook always exits 0.
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -27,7 +27,7 @@ const str = (value) => (typeof value === "string" ? value : "");
 
 const posts = {
   UserPromptSubmit: (h) => ["Claude (lead)", "lead", "running", oneLine(h.prompt)],
-  Stop: () => ["Claude (lead)", "lead", "review", "Waiting for Sumit"],
+  Stop: () => ["Claude (lead)", "lead", "review", "Waiting for you"],
   PreToolUse: (h) => {
     const name = expert(h.tool_input?.description, h.tool_input?.prompt);
     return name && [name, name.toLowerCase(), "running", task(h.tool_input?.description)];
@@ -35,7 +35,8 @@ const posts = {
   SubagentStop: (h) => {
     const { description } = meta(h);
     const name = expert(description);
-    return name && [name, name.toLowerCase(), "review", "Handed back: " + task(description)];
+    // Done, not review: nothing else ever closes a hook-kept card, so "review" piled up; the lead's review shows on its own card.
+    return name && [name, name.toLowerCase(), "done", "Handed back: " + task(description)];
   },
 };
 

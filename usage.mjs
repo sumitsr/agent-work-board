@@ -3,9 +3,10 @@
 // module: who, which model, which workstream, when, and token counts. Transcript text never does.
 //
 //   lead session:  <projects>/<project-dir>/<session>.jsonl                      → "Claude (lead)"
-//   agent run:     <projects>/<project-dir>/<session>/subagents/agent-<id>.jsonl → the member named in
-//                  "act exactly as <Name>" in its first prompt, else "Agent". Its workstream is that of the board task
-//                  the prompt names ("awb task <id>"), because every agent run is stored under the lead's project.
+//   agent run:     <projects>/<project-dir>/<session>/subagents/agent-<id>.jsonl → the team member named by its
+//                  dispatch description ("Mara: …"), "You are <Name>" or "act exactly as <Name>", else "Agent". Its
+//                  workstream is that of the board task the prompt names ("awb task <id>"), else that of the folder
+//                  each response ran in (an agent's worktree counts as its project).
 //
 // Self-check: `node usage.mjs <file.jsonl>` prints that file's deduplicated totals.
 import { readFileSync } from "node:fs";
@@ -37,19 +38,36 @@ export const family = (model) => {
 const localDay = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 
 // Agent runs live under the lead session's project folder, so the board task they were briefed on says more.
-function workstreamOf(file, tasks) {
+// A response in a named project folder counts there; anything else counts under the session's first folder.
+const named = (cwd = "") => {
+  cwd = cwd.replace(/\/\.claude\/worktrees\/[^/]+/, ""); // an agent's worktree belongs to its project
+  return WORKSTREAMS.find(([prefix]) => cwd === prefix || cwd.startsWith(prefix + "/"))?.[1];
+};
+function workstreamOf(file, tasks, recordCwd = file.cwd) {
   for (const id of file.taskIds || []) if (tasks[id]?.workstream) return String(tasks[id].workstream);
-  const cwd = file.cwd;
+  const hit = named(recordCwd) || named(file.firstCwd);
+  if (hit) return hit;
+  const cwd = file.firstCwd;
   if (cwd) {
-    const hit = WORKSTREAMS.find(([prefix]) => cwd === prefix || cwd.startsWith(prefix + "/"));
-    if (hit) return hit[1];
     if (cwd === HOME) return "Home";
     const name = basename(cwd);
     return name.startsWith("GoogleDrive-") ? "Google Drive" : name;
   }
   const encoded = HOME.replace(/[^A-Za-z0-9]/g, "-");
-  const hit = WORKSTREAMS.find(([prefix]) => { const p = prefix.replace(/[^A-Za-z0-9]/g, "-"); return file.dir === p || file.dir.startsWith(p + "-"); });
-  return hit ? hit[1] : file.dir.slice(encoded.length).replace(/^-(Code-)?/, "") || "Home";
+  const byDir = WORKSTREAMS.find(([prefix]) => { const p = prefix.replace(/[^A-Za-z0-9]/g, "-"); return file.dir === p || file.dir.startsWith(p + "-"); });
+  return byDir ? byDir[1] : file.dir.slice(encoded.length).replace(/^-(Code-)?/, "") || "Home";
+}
+
+// An agent run's teammate: its dispatch description ("Mara: fact-check …"), or "You are Mara" / "act exactly as
+// Mara" in its first prompt, counted only if that name is on the board's team.
+const teamNames = () => { try { return Object.values(JSON.parse(readFileSync(join(DATA_DIR, "board.json"), "utf8")).team || {}).map((m) => String(m.name)); } catch { return []; } };
+function memberOf(label, prompt) {
+  const team = teamNames();
+  for (const said of [/^\s*(\w+)\s*:/.exec(label)?.[1], /\b(?:You are|act exactly as) ([A-Z][A-Za-z]+)/.exec(prompt)?.[1]]) {
+    const hit = said && team.find((name) => name.toLowerCase() === said.toLowerCase());
+    if (hit) return hit;
+  }
+  return "Agent";
 }
 
 function promptText(content) {
@@ -58,12 +76,14 @@ function promptText(content) {
 }
 
 function handleLine(path, file, line) {
-  if (!file.cwd) { const m = /"cwd":"((?:[^"\\]|\\.)*)"/.exec(line); if (m) try { file.cwd = JSON.parse(`"${m[1]}"`); } catch {} }
+  // A session can move between folders (and start in an unrelated one), so each record takes the folder it ran in.
+  const m = /"cwd":"((?:[^"\\]|\\.)*)"/.exec(line);
+  if (m && m[1] !== file.rawCwd) try { file.cwd = JSON.parse(`"${m[1]}"`); file.rawCwd = m[1]; file.firstCwd ||= file.cwd; } catch {}
   if (!file.lead && !file.checkedPrompt && line.includes('"type":"user"')) {
     file.checkedPrompt = true;
     try {
       const prompt = promptText(JSON.parse(line).message?.content);
-      file.member = /act exactly as ([A-Z][A-Za-z]+)/.exec(prompt)?.[1] || "Agent";
+      file.member = memberOf(file.label, prompt);
       file.taskIds = [...new Set([...prompt.matchAll(/\bawb(?:\.mjs)?\s+task\s+([A-Za-z0-9][\w-]*)/g)].map((m) => m[1]))].slice(0, 8); // first one on the board wins
     } catch {}
   }
@@ -76,7 +96,7 @@ function handleLine(path, file, line) {
   if (!Number.isFinite(at)) return;
   const n = (v) => (Number.isFinite(v) ? v : 0);
   // The same response is written once per content block; the last copy carries the final output count.
-  records.set(`${message.id}|${entry.requestId}`, { file: path, at, model: family(message.model),
+  records.set(`${message.id}|${entry.requestId}`, { file: path, cwd: file.cwd, at, model: family(message.model),
     input: n(usage.input_tokens), output: n(usage.output_tokens), cacheWrite: n(usage.cache_creation_input_tokens), cacheRead: n(usage.cache_read_input_tokens) });
 }
 
@@ -148,12 +168,13 @@ export function summary(tasks = {}) {
   const daily = new Map(), runs = new Map();
   for (const r of records.values()) {
     if (r.at < since) continue;
-    const file = files.get(r.file), workstream = workstreamOf(file, tasks), day = localDay(r.at);
+    const file = files.get(r.file), workstream = workstreamOf(file, tasks, r.cwd || file.cwd), day = localDay(r.at);
     const key = [day, workstream, r.model, file.member].join("|");
     if (!daily.has(key)) daily.set(key, { day, workstream, model: r.model, member: file.member, ...ZERO() });
     add(daily.get(key), r);
     if (!runs.has(r.file)) runs.set(r.file, { id: basename(r.file, ".jsonl"), member: file.member, lead: file.lead, label: file.label, workstream, start: r.at, end: r.at, models: {}, ...ZERO() });
     const run = add(runs.get(r.file), r);
+    if (r.at >= run.end) run.workstream = workstream; // a run is labeled by where it is working now
     run.start = Math.min(run.start, r.at); run.end = Math.max(run.end, r.at);
     run.models[r.model] = (run.models[r.model] || 0) + r.output + r.input;
   }
