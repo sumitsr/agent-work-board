@@ -9,4 +9,8 @@ mkdir -p "$ROOT/data" "$HOME/Library/LaunchAgents"
 sed -e "s|__NODE__|$NODE|g" -e "s|__ROOT__|$ROOT|g" "$ROOT/$LABEL.plist.template" > "$PLIST"
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
-echo "Installed $PLIST. The board is at http://127.0.0.1:4747"
+# Put awb on PATH. A wrapper, not a symlink: awb finds awb.mjs next to itself.
+mkdir -p "$HOME/.local/bin"
+printf '#!/bin/sh\nexec "%s/awb" "$@"\n' "$ROOT" > "$HOME/.local/bin/awb"
+chmod +x "$HOME/.local/bin/awb"
+echo "Installed $PLIST and ~/.local/bin/awb. The board is at http://127.0.0.1:4747"
