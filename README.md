@@ -88,14 +88,15 @@ The board's only token cost is agents running `awb` through their shell, so post
 
 1. **Start:** `awb task <id> --agent <Name> --model <Model> --status running --stage "What you're doing" --quiet`
 2. **One milestone,** only if the task runs long: `awb task <id> --progress 60 --stage "Now doing X" --quiet`
-3. **Hand back in one call:** `awb task <id> --status review --progress 100 --stage "Ready for review" --msg-to Lead --msg "One line: what you hand over" --quiet`
+3. **Hand back in one call:** `awb task <id> --status done --progress 100 --stage "Handed back" --msg-to Claude --msg "One line: what you hand over" --quiet`
+   (`done`, not `review`: nothing on the board closes a review, so reviews pile up; the lead reviews in chat and the message is the hand-over.)
 
 - Status changes and messages reach Recent activity on their own. Post `awb event` only for what the board can't see: a PR opened or merged, an approval.
 - Never read the board to post to it: no `list` or `show` first. Those are for people.
 
 Paste these three lines into your agents' instructions and they will keep the board current.
 
-**Or post with no agent effort:** register `node /path/to/agent-work-board/scripts/claude-hook.mjs` as a Claude Code command hook for `UserPromptSubmit`, `Stop`, `SubagentStop`, `PreToolUse` (matcher `Agent|Task`) and `PostToolUse` (matcher `Bash`). In projects with `.claude/team/handbook.md` it keeps one card for the lead and one per team member, named from the dispatch description (`Mara: fact-check PR 160`) or "You are Mara" in the prompt. A dispatch sets that member's card to running and the hand-back sets it to done ("Handed back: …"); the lead's card shows the review. Merged pull requests reach the timeline by themselves: after a merge command and at the end of each lead turn, a background run asks `gh` for newly merged PRs and posts each once (the first run only records where to start).
+**Or post with no agent effort:** register `node /path/to/agent-work-board/scripts/claude-hook.mjs` as a Claude Code command hook for `UserPromptSubmit`, `Stop`, `SubagentStop`, `PreToolUse` (matcher `Agent|Task`) and `PostToolUse` (matcher `Bash`). It works for any team job in any project: one card for the lead and one per expert. An expert is named from "You are Mara" in the dispatch prompt (any name; a new one gets a guest desk) or from the description (`Mara: fact-check PR 160`, team members only). A session joins the board at its first named dispatch, or from the start if its project has `.claude/team/handbook.md`; sessions that never dispatch a named expert stay off it. A dispatch sets that member's card to running and the hand-back sets it to done ("Handed back: …") and posts the first line of the agent's reply to the lead as a message, so the conversation stays live; the lead's card shows the review. Merged pull requests reach the timeline by themselves: after a merge command and at the end of each lead turn, a background run asks `gh` for newly merged PRs and posts each once (the first run only records where to start).
 
 ## Configuration
 

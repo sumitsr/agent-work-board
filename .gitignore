@@ -11,3 +11,4 @@ demo/out/
 # Earlier Archify drafts, kept locally only
 docs/diagrams/archify/
 docs/diagrams/compare.png
+.omc/
